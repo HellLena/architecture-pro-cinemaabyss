@@ -19,6 +19,7 @@ class EventsController(
         @RequestBody event: MovieEvent,
     ): EventResponse {
         val id = producer.send("movie-events", event)
+
         return EventResponse(
             status = "success",
             event = EventResponse.Event(
@@ -33,6 +34,7 @@ class EventsController(
         @RequestBody event: UserEvent,
     ): EventResponse {
         val id = producer.send("user-events", event)
+
         return EventResponse(
             status = "success",
             event = EventResponse.Event(
@@ -47,6 +49,7 @@ class EventsController(
         @RequestBody event: PaymentEvent,
     ): EventResponse {
         val id = producer.send("payment-events", event)
+
         return EventResponse(
             status = "success",
             event = EventResponse.Event(
