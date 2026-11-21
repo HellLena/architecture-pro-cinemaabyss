@@ -44,7 +44,9 @@ MVP сервис [events](src/microservices/events) реализован на с
 ### CI/CD
 
 В папке .github/worflows доработан деплой новых сервисов proxy и events в docker-build-push.yml, чтобы api-tests при сборке отрабатывали корректно при отправке коммита в новую ветку (cinema).
-В результате сборки в GitHub registry успешно добавлены [packages](tests/results/github/packages.png) для всех четырёх серисов.
+В результате сборки:
+1. В GitHub registry успешно добавлены [packages](tests/results/github/packages.png) для всех четырёх сервисов.
+2. Прогон автотестов в пайплайне успешный: [скрин](tests/results/github/pipeline-test.png).
 
 ### Proxy в Kubernetes
 
