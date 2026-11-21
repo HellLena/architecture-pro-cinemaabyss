@@ -70,15 +70,30 @@ MVP сервис [events](src/microservices/events) реализован на с
 Тестирование Circuit Breaker:
 1. [Конфигурация CB](src/kubernetes/circuit-breaker-config.yaml)
 2. [Istio injection](tests/results/istio/istio-injection.png)
-3. [Результат тестирования](tests/results/istio/movies-test.png):
+3. Результаты тестирования:
    
-   - 112 из 500 успешных запросов (22,4%)
-   - 388 из 500 с 503 ошибкой 
+   - movies: ```kubectl exec -n cinemaabyss deployment/fortio-deploy -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies```
+ 
+     - [Результат тестирования](tests/results/istio/movies-test.png):
    
-4. [Статистика](tests/results/istio/movies-stats.png):
+       - 112 из 500 успешных запросов (22,4%)
+       - 388 из 500 с 503 ошибкой 
+   
+     - [Статистика](tests/results/istio/movies-stats.png):
     
-   - 388 из 500 запросов отклонено: нельзя было поставить в очередь из-за превышения лимита
-   - 99 из 500 поставлено в очередь
+       - 388 из 500 запросов отклонено: нельзя было поставить в очередь из-за превышения лимита
+       - 99 из 500 поставлено в очередь
+   - monolith: ```kubectl exec -n cinemaabyss deployment/fortio-deploy -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://monolith:8080/api/users ```
+
+     - [Результат тестирования](tests/results/istio/monolith-test.png):
+
+         - 149 из 500 успешных запросов (29,8%)
+         - 351 из 500 с 503 ошибкой
+
+     - [Статистика](tests/results/istio/monolith-stats.png):
+
+         - 351 из 500 запросов отклонено: нельзя было поставить в очередь из-за превышения лимита
+         - 113 из 500 поставлено в очередь
 
 Так же были проведены эксперименты с другими настройками CB:
 1. Если поставить очень слабые [настройки](tests/results/istio/experiments/cb-light.png), то все ответы будут успешны, т.е. сервис выдерживает такую нагрузку, если разрешить это настройками CB: [скрин](tests/results/istio/experiments/cb-light-result.png)

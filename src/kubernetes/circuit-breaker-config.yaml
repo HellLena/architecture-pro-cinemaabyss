@@ -1,4 +1,4 @@
-
+---
 apiVersion: networking.istio.io/v1
 kind: DestinationRule
 metadata:
@@ -6,6 +6,23 @@ metadata:
   namespace: cinemaabyss
 spec:
   host: movies-service.cinemaabyss.svc.cluster.local
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 5
+        connectTimeout: 5s
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 50
+        maxRequestsPerConnection: 10
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: monolith-circuit-breaker
+  namespace: cinemaabyss
+spec:
+  host: monolith.cinemaabyss.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
