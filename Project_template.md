@@ -2,62 +2,41 @@
 
 ## Задание 1
 
-1. Спроектируйте to be архитектуру КиноБездны, разделив всю систему на отдельные домены и организовав интеграционное взаимодействие и единую точку вызова сервисов.
-Результат представьте в виде контейнерной диаграммы в нотации С4.
-Добавьте ссылку на файл в этот шаблон
-[ссылка на файл](ссылка)
+To-Be архитектура КиноБездны:
 
+[Диаграмма контейнеров](schemas/container/C4_Container.png)
+
+Пока по условиям задачи команда небольшая и специализируется на Go, предпочитаемым стеком для микросервисов является Go/Gin.
+При этом по мере роста команды допустимо использование Kotlin/Spring Boot, что является хорошей альтернативой для нагруженных сервисов и асинхронного взаимодействия с БД и REST API.
+
+Допущения, принятые в построении диаграммы для более удобочитаемого вида:
+
+1. Связи от BFF сервисов показаны на примере одного сервиса Mobile BFF, хотя аналогичные связи будут и у других сервисов BFF.
+2. Для микросервисов показаны только их связи с хранилищами данных, брокерами сообщений и внешними системами. Если микросервисы не связаны между собой через брокер, значит, они обмениваются данными по REST API.
+3. Взаимодействие через Kafka показано только для сервисов оплаты платежей и оформления подписок. В будущем может, например, появиться сервис уведомлений, который будет получать информацию из Kafka о скидках, новинках в каталоге и т.п.
 
 ## Задание 2
 
 ### 1. Proxy
-Команда КиноБездны уже выделила сервис метаданных о фильмах movies и вам необходимо реализовать бесшовный переход с применением паттерна Strangler Fig в части реализации прокси-сервиса (API Gateway), с помощью которого можно будет постепенно переключать траффик, используя фиче-флаг.
-
-
-Реализуйте сервис на любом языке программирования в ./src/microservices/proxy.
-Конфигурация для запуска сервиса через docker-compose уже добавлена
-```yaml
-  proxy-service:
-    build:
-      context: ./src/microservices/proxy
-      dockerfile: Dockerfile
-    container_name: cinemaabyss-proxy-service
-    depends_on:
-      - monolith
-      - movies-service
-      - events-service
-    ports:
-      - "8000:8000"
-    environment:
-      PORT: 8000
-      MONOLITH_URL: http://monolith:8080
-      #монолит
-      MOVIES_SERVICE_URL: http://movies-service:8081 #сервис movies
-      EVENTS_SERVICE_URL: http://events-service:8082 
-      GRADUAL_MIGRATION: "true" # вкл/выкл простого фиче-флага
-      MOVIES_MIGRATION_PERCENT: "50" # процент миграции
-    networks:
-      - cinemaabyss-network
-```
-
-- После реализации запустите postman тесты - они все должны быть зеленые.
-- Отправьте запросы к API Gateway:
-   ```bash
-   curl http://localhost:8000/api/movies
-   ```
-- Протестируйте постепенный переход, изменив переменную окружения MOVIES_MIGRATION_PERCENT в файле docker-compose.yml.
+Для реализации прокси-сервиса [proxy](/src/microservices/proxy) (API Gateway) выбран стек Python + FastAPI как наиболее простое решение текущей задачи.
+В реальном проекте более эффективно использовать готовые решения такие, как Kong, например.
 
 ### 2. Kafka
- Вам как архитектуру нужно также проверить гипотезу насколько просто реализовать применение Kafka в данной архитектуре.
+MVP сервис [events](src/microservices/events) реализован на стеке Kotlin + Spring Boot, так как:
 
-Для этого нужно сделать MVP сервис events, который будет при вызове API создавать и сам же читать сообщения в топике Kafka.
+- Kotlin coroutines предоставляют возможность асинхронного взаимодействия по REST API и с брокером
+- Spring Boot из коробки предоставляет легковесную и просто конфигурируемую библиотеку для работы с Kafka
 
-    - Разработайте сервис на любом языке программирования с consumer'ами и producer'ами.
-    - Реализуйте простой API, при вызове которого будут создаваться события User/Payment/Movie и обрабатываться внутри сервиса с записью в лог
-    - Добавьте в docker-compose новый сервис, kafka там уже есть
+Скриншоты результатов тестов:
 
-Необходимые тесты для проверки этого API вызываются при запуске npm run test:local из папки tests/postman 
-Приложите скриншот тестов и скриншот состояния топиков Kafka http://localhost:8090 
+1. [Результаты тестов](tests/results/test-results.png)
+2. [Состояние Kafka topics после тестов](tests/results/test-kafka-topics-result.png). Полученные в результате прогона тестов сообщения:
+
+   - [movies-topic](tests/results/test-kafka-movies-message-result.png)
+   - [payment-topic](tests/results/test-kafka-payment-message-result.png)
+   - [user-topic](tests/results/test-kafka-user-message-result.png)
+
+3. [Полученные сообщения](tests/results/test-event-service-received-messages.png) сервисом events.
 
 
 ## Задание 3
@@ -70,43 +49,8 @@
 
 ### CI/CD
 
- В папке .github/worflows доработайте деплой новых сервисов proxy и events в docker-build-push.yml , чтобы api-tests при сборке отрабатывали корректно при отправке коммита в вашу новую ветку.
+В папке .github/worflows доработан деплой новых сервисов proxy и events в docker-build-push.yml, чтобы api-tests при сборке отрабатывали корректно при отправке коммита в новую ветку (cinema).
 
-Нужно доработать 
-```yaml
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - '.github/workflows/docker-build-push.yml'
-  release:
-    types: [published]
-```
-и добавить необходимые шаги в блок
-```yaml
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-```
 Как только сборка отработает и в github registry появятся ваши образы, можно переходить к блоку настройки Kubernetes
 Успешным результатом данного шага является "зеленая" сборка и "зеленые" тесты
 
