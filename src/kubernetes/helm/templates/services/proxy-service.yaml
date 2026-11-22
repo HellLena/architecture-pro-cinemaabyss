@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
       - name: proxy-service
-        image: {{ .Values.proxyService.image.repository }}:{{ .Values.moviesService.image.tag }}
+        image: {{ .Values.proxyService.image.repository }}:{{ .Values.proxyService.image.tag }}
         imagePullPolicy: {{ .Values.proxyService.image.pullPolicy }}
         ports:
           - containerPort: {{ .Values.proxyService.service.targetPort }}
@@ -51,7 +51,7 @@ spec:
           {{- toYaml .Values.proxyService.resources | nindent 10 }}
         readinessProbe:
           httpGet:
-            path: /api/movies/health
+            path: /health
             port: {{ .Values.proxyService.service.targetPort }}
           initialDelaySeconds: 5
           periodSeconds: 10

@@ -61,9 +61,9 @@ MVP сервис [events](src/microservices/events) реализован на с
 ## Задание 4
 Результаты установки helm:
 1. Установка helm: [скрин](tests/results/helm/helm-install.png)
-2. Создание новых pod: [скрин](tests/results/helm/helm-pods-creating.png)
-3. Pods running: [скрин](tests/results/helm/helm-pods-running.png)
-4. Сервис так же доступен по домену и https: [скрин](tests/results/helm/helm-cinemaabyss-example-com.png)
+2. Helm deployments: [скрин](tests/results/helm/helm-deployments.png)
+3. Сервис так же доступен по домену и https: [скрин](tests/results/helm/helm-cinemaabyss-example-com.png)
+4. Результат прогона ```npm run test:kubernetes```: [скрин](tests/results/helm/helm-test-results.png)
 
 
 # Задание 5
