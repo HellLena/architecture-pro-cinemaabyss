@@ -70,7 +70,7 @@ spec:
   selector:
     app: movies-service
   ports:
-  - port: {{ .Values.moviesService.service.port }}
-    targetPort: {{ .Values.moviesService.service.targetPort }}
+    - port: {{ .Values.moviesService.service.port }}
+      targetPort: {{ .Values.moviesService.service.targetPort }}
   type: {{ .Values.moviesService.service.type }}
 {{- end }}

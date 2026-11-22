@@ -154,3 +154,9 @@ go.work
 
 # Postman tests reports
 tests/postman/reports/
+
+venv
+__pycache__/
+*.iml
+gradle
+.kotlin

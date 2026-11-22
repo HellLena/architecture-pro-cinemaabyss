@@ -1,0 +1,91 @@
+@startuml
+!include C4_Container_template.puml
+Person(user, "Пользователь")
+
+System_Boundary(cinemaAbyss, "Cinema Abyss") {
+    Container_Boundary(clients, "Клиентские приложения") {
+        Container(web, "Web App", "ReactJS / TypeScript", "Веб-интерфейс")
+        Container(mobile, "Mobile App", "iOS / Android", "Мобильное приложение")
+        Container(tv, "Smart TV App", "TV App", "Приложение для ТВ")
+    }
+
+    Container(apiGateway, "API Gateway", "Kong", "Маршрутизация запросов, аутентификация пользователей, rate limiting")
+
+    Container_Boundary(bff, "BFF") {
+        Container(webBff, "Web BFF", "Go / Gin", "API адаптер для веб-клиентов")
+        Container(mobileBff, "Mobile BFF", "Go / Gin", "API адаптер для мобильных клиентов")
+        Container(tvBff, "TV BFF", "Go / Gin", "API адаптер для ТВ клиентов")
+    }
+
+    Container_Boundary(backend, "Backend Services") {
+        Container(userSvc, "User Service", "Kotlin / Spring Boot", "Управление пользователями")
+        Container(paymentSvc, "Payment Service", "Kotlin / Spring Boot", "Операции с платежами")
+        Container(subscriptionSvc, "Subscription Service", "Kotlin / Spring Boot", "Управление подписками")
+        Container(discountSvc, "Discount Service", "Kotlin / Spring Boot", "Управление скидками")
+        Container(catalogSvc, "Catalog Service", "Kotlin / Spring Boot", "Управление каталогом и метаданными контента (создание карточек контента и т.п.)")
+        Container(videoProcessingSvc, "Content Processing Service", "Kotlin / Spring Boot", "Загрузка и обработка контента")
+        Container(playbackSvc, "Playback Service", "Kotlin / Spring Boot", "Воспроизведение контента")
+        Container(recommendService, "Recommendation Service", "Kotlin / Spring Boot", "Получает оценки пользователей, собирает витрину на основе предпочтений пользователя")
+    }
+
+    Container_Boundary(dataStore, "Data store layer") {
+        ContainerDb(userDB, "user_db", "PostgreSQL", "Хранит данные пользователей онлайн-кинотеатра (при этом auth данные хранятся у OAuth провайдера)")
+        ContainerDb(paymentDB, "payment_db", "PostgreSQL", "Хранит историю платежей")
+        ContainerDb(subscriptionDB, "subscription_db", "PostgreSQL", "Хранит данные о подписках")
+        ContainerDb(discountDB, "discount_db", "PostgreSQL", "Хранит данные о скидках")
+        ContainerDb(metadataDB, "metadata_db", "PostgreSQL / Elasticsearch", "Хранит метаданные (жанры, актёры, оценки)")
+        ContainerDb(storage, "Файловое хранилище", "S3", "Хранит видео и др. файлы, производимые КиноБездной")
+    }
+
+    ContainerQueue(kafka, "Брокер сообщений", "Kafka", "Для обмена информацией между сервисами")
+}
+
+' Внешние системы
+System_Ext(paymentSystem, "Система обработки платежей", "")
+System_Ext(recommendSystem, "Рекомендательная система (RabbitMQ)", "")
+System_Ext(extPartner, "Система кинотеатра-партнёра (REST API, CDN)", "Принимает статусы подписок, отдаёт каталоги/видеопотоки")
+
+' Связи пользователя
+Rel_D(user, web, "")
+Rel_D(user, mobile, "")
+Rel_D(user, tv, "")
+
+' Связи клиентских приложений
+Rel_D(web, apiGateway, "")
+Rel_D(mobile, apiGateway, "")
+Rel_D(tv, apiGateway, "")
+
+' Связи API Gateway
+Rel_D(apiGateway, webBff, "")
+Rel_D(apiGateway, mobileBff, "")
+Rel_D(apiGateway, tvBff, "")
+
+' Связи BFF
+Rel_D(mobileBff, userSvc, "")
+Rel_D(mobileBff, paymentSvc, "")
+Rel_D(mobileBff, subscriptionSvc, "")
+Rel_D(mobileBff, discountSvc, "")
+Rel_D(mobileBff, catalogSvc, "")
+Rel_D(mobileBff, videoProcessingSvc, "")
+Rel_D(mobileBff, playbackSvc, "")
+Rel_D(mobileBff, recommendService, "")
+
+' Связи с внешними системами
+Rel_D(paymentSvc, paymentSystem, "Обменивается данными с системой обработки платежей")
+Rel_D(recommendService, recommendSystem, "Отправляет данные об оценках пользователя и получает рекомендации")
+Rel_D(playbackSvc, extPartner, "")
+
+' Связи с хранилищами и БД
+Rel_D(playbackSvc, storage, "Запрашивает данные для воспроизведения")
+Rel_D(videoProcessingSvc, storage, "Сохраняет обработанные данные")
+Rel_D(catalogSvc, metadataDB, "Сохраняет метаданные")
+Rel_D(userSvc, userDB, "")
+Rel_D(paymentSvc, paymentDB, "")
+Rel_D(subscriptionSvc, subscriptionDB, "")
+Rel_D(discountSvc, discountDB, "")
+Rel_D(recommendService, metadataDB, "Сохраняет информацию об оценках, получает данные по рекомендованному контенту")
+
+' Связи с брокерами сообщений
+Rel_D(paymentSvc, kafka, "Отправляет инф-ию о статусе платежа")
+Rel_D(subscriptionSvc, kafka, "Получает и обрабатывает инф-ию о статусе платежа")
+@enduml
